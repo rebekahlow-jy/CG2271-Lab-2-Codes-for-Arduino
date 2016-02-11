@@ -1,0 +1,76 @@
+#include <Arduino.h>
+
+#define PIN_BUTTON_PTTM 2
+#define PIN_BUTTON_TOUCH 3
+#define PIN_BRIGHT_LED 6
+#define PIN_BLINK_LED  7
+#define PIN_PTTM 0
+#define PIN_TOUCH 1
+
+unsigned char flagPTTM = 0;
+unsigned char flagTouch = 0;
+unsigned char flagBright = 0;
+unsigned char flagBlink = 0;
+
+long lastDebounceTimePTTM = 0;  // the last time the output pin was toggled
+long debounceDelay = 200;    // the debounce time; increase if the output flickers
+long lastDebounceTimeTouch = 0;  // the last time the output pin was toggled
+
+void isrPTTM() {
+  if ((millis() - lastDebounceTimePTTM) > debounceDelay){
+    flagPTTM=!flagPTTM;
+  }
+  lastDebounceTimePTTM = millis();   
+} 
+
+void isrTouch() {
+  if ((millis() - lastDebounceTimeTouch) > debounceDelay){
+    flagTouch=!flagTouch;
+  }
+  lastDebounceTimeTouch = millis();   
+} 
+
+void adjustBlinkSpeed(int delayVal){
+  digitalWrite(PIN_BLINK_LED, HIGH);
+  delay(delayVal);
+  digitalWrite(PIN_BLINK_LED, LOW);
+  delay(delayVal);
+}
+
+int remapTouch(int value){
+  return 125 + (int)(value*(500.0-125.0)/1023.0);
+}
+
+int remapPTTM(int x)
+{
+  return (int) x * 255.0 / 1023.0;
+}
+
+void setup() {
+       attachInterrupt(digitalPinToInterrupt(2), isrPTTM, RISING);
+       attachInterrupt(digitalPinToInterrupt(3), isrTouch, RISING);  
+       pinMode(PIN_BRIGHT_LED, OUTPUT);
+       pinMode(PIN_BLINK_LED,OUTPUT);
+}
+
+void loop() {
+       int val, touch;
+       if (flagPTTM == HIGH){
+              flagBright = 1;
+       }
+       if (flagBright){
+              val = analogRead(PIN_PTTM);
+              val = remapPTTM(val);
+              analogWrite(PIN_BRIGHT_LED, val);
+       }
+       if (flagTouch == HIGH){
+              flagBlink = 1;      
+       }
+       if (flagBlink){
+              touch = analogRead(PIN_TOUCH);
+              touch = remapTouch(touch);
+              adjustBlinkSpeed(touch);
+       }
+       delay(500);
+       
+}

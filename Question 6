@@ -1,0 +1,45 @@
+#include <Arduino.h> 
+
+#define PIN_BLINK_LED 7
+#define PIN_BRIGHT_LED  6
+#define PIN_PTTM 0
+#define PIN_TOUCH 1
+
+void adjustBlinkSpeed(int delayVal){
+  digitalWrite(PIN_BLINK_LED, HIGH);
+  delay(delayVal);
+  digitalWrite(PIN_BLINK_LED, LOW);
+  delay(delayVal);
+}
+
+int remapTouch(int value){
+  return 125 + (int)(value*(500.0-125.0)/1023.0);
+}
+
+int remapPTTM(int x)
+{
+  return (int) x * 255.0 / 1023.0;
+}
+
+void setup() {
+       pinMode(PIN_BRIGHT_LED, OUTPUT);
+       pinMode(PIN_BLINK_LED,OUTPUT);
+       Serial.begin(115200);
+
+}
+
+void loop() {
+       int val,touch;
+       val = analogRead(PIN_PTTM);
+       touch = analogRead(PIN_TOUCH);
+       val = remapPTTM(val);
+       touch = remapTouch(touch);
+       adjustBlinkSpeed(touch);
+       analogWrite(PIN_BRIGHT_LED, val);
+       Serial.print(val);
+       Serial.print(" ");
+       Serial.print(touch);
+       Serial.println();
+       delay(200);
+       
+}
